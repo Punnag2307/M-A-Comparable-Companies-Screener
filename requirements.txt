@@ -1,0 +1,10 @@
+anthropic
+yfinance
+streamlit
+pandas
+openpyxl
+xlsxwriter
+requests
+beautifulsoup4
+plotly
+python-dotenv
