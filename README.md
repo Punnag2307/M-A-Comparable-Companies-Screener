@@ -1,53 +1,134 @@
+
 # M&A Comparable Companies Screener
 
-A Streamlit web app that takes a company description, uses the Anthropic Claude API to identify comparable public companies and historical M&A transactions, fetches their financials via yfinance, calculates valuation multiples (EV/EBITDA, EV/Revenue, P/E), runs a simple DCF model, and exports a formatted Excel report.
+An institutional-grade M&A comparables analysis tool that automates 
+the first two days of deal work — powered by Claude AI and live market data.
 
-## Project Structure
+![Python](https://img.shields.io/badge/Python-3.9+-blue)
+![Streamlit](https://img.shields.io/badge/Streamlit-1.x-red)
+![Claude AI](https://img.shields.io/badge/Claude-Sonnet-orange)
+
+## What it does
+
+Given a company description or name, the tool:
+1. Uses Claude AI to identify 5 relevant public comparable companies 
+   and 5 historical M&A transactions
+2. Fetches live financials for each comp via yfinance (global markets)
+3. Calculates EV/EBITDA, EV/Revenue, and P/E multiples with 
+   25th/median/75th percentile benchmarks
+4. Runs a 3-scenario DCF model (Bear / Base / Bull)
+5. Exports a formatted Excel model across 3 sheets — 
+   styled like an actual IB deliverable
+
+## Demo
+
+**Input:** "B2B SaaS HR and payroll software, India mid-market, 
+~$20M ARR, Series B, competitors include Darwinbox and Keka"
+
+**Output in ~25 seconds:**
+- Comparable companies: Workday, Paychex, Paycom, ADP, Info Edge
+- Multiples: EV/EBITDA median 14.0x, EV/Revenue median 3.6x
+- DCF implied EV: Bear $24M → Base $49M → Bull $89M
+- Downloadable Excel model with 3 formatted sheets
+
+## Why I built this
+
+An IB analyst spends 2 days on a new deal doing exactly this manually — 
+Googling comps, pulling financials, building a multiples table in Excel. 
+This tool does it in 30 seconds. The goal was to understand both the 
+methodology (what makes a good comp, how DCF assumptions flow through 
+to value) and whether AI can meaningfully accelerate institutional 
+finance workflows.
+
+## Architecture
 
 ```
 ma-comps-screener/
 ├── src/
-│   ├── __init__.py
-│   ├── data_fetcher.py     # yfinance financial data retrieval
-│   ├── comp_finder.py      # Claude API — comparable company & deal identification
-│   ├── multiples.py        # EV/EBITDA, EV/Revenue, P/E calculation
-│   ├── dcf.py              # Simple DCF model
-│   └── excel_export.py     # Formatted Excel workbook export
-├── app/
-│   ├── __init__.py
-│   └── streamlit_app.py    # Streamlit front-end
-├── tests/
-│   └── test_fetcher.py     # Unit tests for data_fetcher
-├── .env                    # API keys (never commit)
-├── .gitignore
-├── requirements.txt
-└── README.md
+│   ├── data_fetcher.py    # yfinance wrapper — US + India (NSE) markets
+│   ├── comp_finder.py     # Claude AI — comp identification + rationale
+│   ├── multiples.py       # EV/EBITDA, EV/Revenue, P/E + percentile bands
+│   ├── dcf.py             # 5-year DCF with Bear/Base/Bull scenarios
+│   └── excel_export.py    # IB-style Excel export via openpyxl
+└── app/
+    └── streamlit_app.py   # Web UI
 ```
+
+**Data flow:**
+User input → Claude API (comp identification) → yfinance (live financials) 
+→ Multiples calculation → DCF model → Excel export
 
 ## Setup
 
-1. **Clone the repo and create a virtual environment:**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate        # Windows: venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
+```bash
+git clone https://github.com/YOUR_USERNAME/ma-comps-screener
+cd ma-comps-screener
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
 
-2. **Configure your API key:**
-   Edit `.env` and replace the placeholder:
-   ```
-   ANTHROPIC_API_KEY=your_anthropic_api_key_here
-   ```
+Create a `.env` file in the project root:
+```
+ANTHROPIC_API_KEY=your_key_here
+```
+Get your API key at [console.anthropic.com](https://console.anthropic.com)
 
-3. **Run the app:**
-   ```bash
-   streamlit run app/streamlit_app.py
-   ```
+Run the app:
+```bash
+streamlit run app/streamlit_app.py
+```
 
-## Key Design Decisions
+## Methodology
 
-- API keys are loaded from `.env` via `python-dotenv` — never hardcoded.
-- All functions handle missing data gracefully (return `None`, never crash).
-- Indian NSE tickers automatically receive the `.NS` suffix (e.g. `RELIANCE.NS`).
-- All Claude API calls use model `claude-sonnet-4-20250514`.
-- Streamlit results are stored in `st.session_state` to avoid redundant API calls.
+**Comparable company selection:** Claude AI identifies comps based on 
+business model similarity, sector, geography, and revenue scale. 
+Users can filter by US markets, Indian markets (NSE), or both.
+
+**Multiples calculation:**
+- EV/EBITDA = Enterprise Value / EBITDA (trailing twelve months)
+- EV/Revenue = Enterprise Value / Revenue (TTM)
+- P/E = Market Cap / Net Income (TTM)
+- Enterprise Value = Market Cap + Total Debt - Cash
+
+**DCF model:**
+- 5-year explicit forecast period
+- Free Cash Flow = NOPAT + D&A - Capex
+- Terminal value via Gordon Growth Model
+- 3 scenarios: Bear (growth ×0.7), Base, Bull (growth ×1.3)
+
+**Known limitations:**
+- Indian company financials are in INR — multiples are comparable, 
+  dollar values are not directly comparable to USD peers
+- yfinance data quality varies for smaller companies — 
+  "NM" is shown where data is unavailable
+- Historical M&A transaction multiples are from Claude's training 
+  data and should be independently verified
+- DCF assumptions are user inputs — results are illustrative
+
+## Tech stack
+
+| Layer | Technology |
+|-------|-----------|
+| AI | Anthropic Claude Sonnet |
+| Market data | yfinance (Yahoo Finance) |
+| Web UI | Streamlit |
+| Data | pandas, numpy |
+| Excel export | openpyxl |
+| Visualization | Plotly |
+
+## What I learned
+
+Building this required understanding both sides of the problem: 
+the finance methodology (why EV/EBITDA matters more than P/E for 
+high-growth companies, how terminal value dominates DCF outputs at 
+high growth rates) and the engineering challenges (mixed-currency 
+data normalization, structured JSON extraction from LLM outputs, 
+Excel formatting that matches institutional standards).
+
+The most interesting design decision was making the AI layer 
+stateless — Claude identifies comps but doesn't store state, 
+so every analysis is reproducible and auditable.
+
+---
+
