@@ -8,6 +8,14 @@ the first two days of deal work — powered by Claude AI and live market data.
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.x-red)
 ![Claude AI](https://img.shields.io/badge/Claude-Sonnet-orange)
 
+## Problem
+
+In early-stage deal analysis, identifying relevant comps and transactions is:
+
+1. Manual
+2. Time-intensive
+3. Inconsistent across analysts
+
 ## What it does
 
 Given a company description or name, the tool:
@@ -39,6 +47,12 @@ This tool does it in 30 seconds. The goal was to understand both the
 methodology (what makes a good comp, how DCF assumptions flow through 
 to value) and whether AI can meaningfully accelerate institutional 
 finance workflows.
+
+## Impact
+
+1. Reduces benchmarking time from days → minutes
+2. Standardizes initial comps screening
+3. Helps analysts focus on judgment vs data gathering
 
 ## Architecture
 
