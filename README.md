@@ -75,7 +75,7 @@ User input → Claude API (comp identification) → yfinance (live financials)
 ## Setup
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/ma-comps-screener
+git clone https://github.com/Punnag2307/ma-comps-screener
 cd ma-comps-screener
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
